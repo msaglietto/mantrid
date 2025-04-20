@@ -3,6 +3,7 @@ package json
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -91,4 +92,16 @@ func (r *aliasRepository) writeAliases(aliases []*domain.Alias) error {
 	}
 
 	return os.WriteFile(r.filePath, data, 0644)
+}
+
+func (r *aliasRepository) List(ctx context.Context) ([]*domain.Alias, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	aliases, err := r.readAliases()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read aliases: %w", err)
+	}
+
+	return aliases, nil
 }

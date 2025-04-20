@@ -10,6 +10,7 @@ import (
 type AliasService interface {
 	CreateAlias(ctx context.Context, name, command string) error
 	GetAlias(ctx context.Context, name string) (*domain.Alias, error)
+	ListAliases(ctx context.Context) ([]*domain.Alias, error)
 }
 
 type aliasService struct {
@@ -37,4 +38,8 @@ func (s *aliasService) CreateAlias(ctx context.Context, name, command string) er
 
 func (s *aliasService) GetAlias(ctx context.Context, name string) (*domain.Alias, error) {
 	return s.repo.FindByName(ctx, name)
+}
+
+func (s *aliasService) ListAliases(ctx context.Context) ([]*domain.Alias, error) {
+	return s.repo.List(ctx)
 }
