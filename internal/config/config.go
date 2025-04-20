@@ -58,13 +58,18 @@ func Load() (*Config, error) {
 	defaultAliasFile := filepath.Join(getConfigDir(), "aliases.json")
 	v.SetDefault("alias_file", defaultAliasFile)
 
-	// Configure Viper to read the config file
-	v.SetConfigName("config") // Name of config file (without extension)
-	v.SetConfigType("yaml")   // Config file type
+	// Check if a specific config file is specified via environment variable
+	if configFile := v.GetString("config"); configFile != "" {
+		v.SetConfigFile(configFile)
+	} else {
+		// Configure Viper to read the config file
+		v.SetConfigName("config") // Name of config file (without extension)
+		v.SetConfigType("yaml")   // Config file type
 
-	// Add paths where Viper should look for the config file
-	v.AddConfigPath(getConfigDir()) // First check in .mantrid directory
-	v.AddConfigPath(".")            // Then check current directory
+		// Add paths where Viper should look for the config file
+		v.AddConfigPath(getConfigDir()) // First check in .mantrid directory
+		v.AddConfigPath(".")            // Then check current directory
+	}
 
 	// Try to read the config file
 	if err := v.ReadInConfig(); err != nil {

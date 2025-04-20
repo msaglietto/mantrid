@@ -39,6 +39,9 @@ func TestCreateAlias(t *testing.T) {
 		err := service.CreateAlias(ctx, "test", "echo test")
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
+		// Clean up mock after this test case
+		mockRepo.ExpectedCalls = nil
+		mockRepo.Calls = nil
 	})
 
 	t.Run("alias already exists", func(t *testing.T) {
@@ -48,5 +51,8 @@ func TestCreateAlias(t *testing.T) {
 		err := service.CreateAlias(ctx, "test", "echo test")
 		assert.Equal(t, domain.ErrAliasExists, err)
 		mockRepo.AssertExpectations(t)
+		// Clean up mock after this test case
+		mockRepo.ExpectedCalls = nil
+		mockRepo.Calls = nil
 	})
 }
