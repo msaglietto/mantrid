@@ -32,6 +32,8 @@ var rootCmd = &cobra.Command{
 	Long:  `A command-line application written in Go that helps you store and run aliases, and manage your dotfile configurations.`,
 }
 
+var RootCmd = rootCmd
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
