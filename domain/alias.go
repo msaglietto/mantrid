@@ -43,3 +43,13 @@ func validateAlias(name, command string) error {
 	}
 	return nil
 }
+
+// UpdateCommand updates the command and timestamp of an alias
+func (a *Alias) UpdateCommand(newCommand string) error {
+	if newCommand == "" {
+		return ErrEmptyAliasCommand
+	}
+	a.Command = newCommand
+	a.UpdatedAt = time.Now()
+	return nil
+}

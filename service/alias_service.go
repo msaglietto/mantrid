@@ -11,6 +11,8 @@ type AliasService interface {
 	CreateAlias(ctx context.Context, name, command string) error
 	GetAlias(ctx context.Context, name string) (*domain.Alias, error)
 	ListAliases(ctx context.Context) ([]*domain.Alias, error)
+	UpdateAlias(ctx context.Context, name, newCommand string) error
+	DeleteAlias(ctx context.Context, name string) error
 }
 
 type aliasService struct {
@@ -42,4 +44,38 @@ func (s *aliasService) GetAlias(ctx context.Context, name string) (*domain.Alias
 
 func (s *aliasService) ListAliases(ctx context.Context) ([]*domain.Alias, error) {
 	return s.repo.List(ctx)
+}
+
+func (s *aliasService) UpdateAlias(ctx context.Context, name, newCommand string) error {
+	// Validate inputs
+	if name == "" {
+		return domain.ErrEmptyAliasName
+	}
+	if newCommand == "" {
+		return domain.ErrEmptyAliasCommand
+	}
+
+	// Find the existing alias
+	alias, err := s.repo.FindByName(ctx, name)
+	if err != nil {
+		return err
+	}
+
+	// Update the command
+	if err := alias.UpdateCommand(newCommand); err != nil {
+		return err
+	}
+
+	// Save the updated alias
+	return s.repo.Update(ctx, alias)
+}
+
+func (s *aliasService) DeleteAlias(ctx context.Context, name string) error {
+	// Validate input
+	if name == "" {
+		return domain.ErrEmptyAliasName
+	}
+
+	// Delete the alias
+	return s.repo.Delete(ctx, name)
 }

@@ -44,6 +44,16 @@ func (m *MockAliasRepository) List(ctx context.Context) ([]*domain.Alias, error)
 	return args.Get(0).([]*domain.Alias), args.Error(1)
 }
 
+func (m *MockAliasRepository) Update(ctx context.Context, alias *domain.Alias) error {
+	args := m.Called(ctx, alias)
+	return args.Error(0)
+}
+
+func (m *MockAliasRepository) Delete(ctx context.Context, name string) error {
+	args := m.Called(ctx, name)
+	return args.Error(0)
+}
+
 func TestCreateAlias(t *testing.T) {
 	mockRepo := new(MockAliasRepository)
 	service := service.NewAliasService(mockRepo)
@@ -115,6 +125,117 @@ func TestListAliases(t *testing.T) {
 		aliases, err := service.ListAliases(ctx)
 		assert.Error(t, err)
 		assert.Nil(t, aliases)
+		mockRepo.AssertExpectations(t)
+	})
+}
+
+func TestUpdateAlias(t *testing.T) {
+	mockRepo := new(MockAliasRepository)
+	service := service.NewAliasService(mockRepo)
+	ctx := context.Background()
+
+	t.Run("update alias successfully", func(t *testing.T) {
+		cleanupMock(t, mockRepo)
+
+		existingAlias, _ := domain.NewAlias("test", "echo original")
+		mockRepo.On("FindByName", ctx, "test").Return(existingAlias, nil)
+		mockRepo.On("Update", ctx, mock.AnythingOfType("*domain.Alias")).Return(nil)
+
+		err := service.UpdateAlias(ctx, "test", "echo updated")
+		assert.NoError(t, err)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("update non-existent alias", func(t *testing.T) {
+		cleanupMock(t, mockRepo)
+
+		mockRepo.On("FindByName", ctx, "nonexistent").Return(nil, domain.ErrAliasNotFound)
+
+		err := service.UpdateAlias(ctx, "nonexistent", "echo test")
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, domain.ErrAliasNotFound)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("update with empty name", func(t *testing.T) {
+		cleanupMock(t, mockRepo)
+
+		err := service.UpdateAlias(ctx, "", "echo test")
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, domain.ErrEmptyAliasName)
+		mockRepo.AssertNotCalled(t, "FindByName")
+		mockRepo.AssertNotCalled(t, "Update")
+	})
+
+	t.Run("update with empty command", func(t *testing.T) {
+		cleanupMock(t, mockRepo)
+
+		err := service.UpdateAlias(ctx, "test", "")
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, domain.ErrEmptyAliasCommand)
+		mockRepo.AssertNotCalled(t, "FindByName")
+		mockRepo.AssertNotCalled(t, "Update")
+	})
+
+	t.Run("update fails at repository level", func(t *testing.T) {
+		cleanupMock(t, mockRepo)
+
+		existingAlias, _ := domain.NewAlias("test", "echo original")
+		expectedErr := errors.New("repository error")
+		mockRepo.On("FindByName", ctx, "test").Return(existingAlias, nil)
+		mockRepo.On("Update", ctx, mock.AnythingOfType("*domain.Alias")).Return(expectedErr)
+
+		err := service.UpdateAlias(ctx, "test", "echo updated")
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr, err)
+		mockRepo.AssertExpectations(t)
+	})
+}
+
+func TestDeleteAlias(t *testing.T) {
+	mockRepo := new(MockAliasRepository)
+	service := service.NewAliasService(mockRepo)
+	ctx := context.Background()
+
+	t.Run("delete alias successfully", func(t *testing.T) {
+		cleanupMock(t, mockRepo)
+
+		mockRepo.On("Delete", ctx, "test").Return(nil)
+
+		err := service.DeleteAlias(ctx, "test")
+		assert.NoError(t, err)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("delete non-existent alias", func(t *testing.T) {
+		cleanupMock(t, mockRepo)
+
+		mockRepo.On("Delete", ctx, "nonexistent").Return(domain.ErrAliasNotFound)
+
+		err := service.DeleteAlias(ctx, "nonexistent")
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, domain.ErrAliasNotFound)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("delete with empty name", func(t *testing.T) {
+		cleanupMock(t, mockRepo)
+
+		err := service.DeleteAlias(ctx, "")
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, domain.ErrEmptyAliasName)
+		mockRepo.AssertNotCalled(t, "Delete")
+	})
+
+	t.Run("delete fails at repository level", func(t *testing.T) {
+		cleanupMock(t, mockRepo)
+
+		expectedErr := errors.New("repository error")
+		mockRepo.On("Delete", ctx, "test").Return(expectedErr)
+
+		err := service.DeleteAlias(ctx, "test")
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr, err)
 		mockRepo.AssertExpectations(t)
 	})
 }

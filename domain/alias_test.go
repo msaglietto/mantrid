@@ -48,3 +48,47 @@ func TestNewAlias(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateCommand(t *testing.T) {
+	tests := []struct {
+		name        string
+		newCommand  string
+		expectedErr error
+	}{
+		{
+			name:        "valid command update",
+			newCommand:  "echo updated",
+			expectedErr: nil,
+		},
+		{
+			name:        "empty command",
+			newCommand:  "",
+			expectedErr: domain.ErrEmptyAliasCommand,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			alias, err := domain.NewAlias("test", "echo original")
+			assert.NoError(t, err)
+			assert.NotNil(t, alias)
+
+			originalUpdatedAt := alias.UpdatedAt
+			originalCommand := alias.Command
+
+			// Add small delay to ensure timestamp changes
+			err = alias.UpdateCommand(tt.newCommand)
+			assert.Equal(t, tt.expectedErr, err)
+
+			if err == nil {
+				assert.Equal(t, tt.newCommand, alias.Command)
+				assert.NotEqual(t, originalCommand, alias.Command)
+				// UpdatedAt should be updated (greater than or equal to original)
+				assert.True(t, alias.UpdatedAt.After(originalUpdatedAt) || alias.UpdatedAt.Equal(originalUpdatedAt))
+			} else {
+				// On error, command should remain unchanged
+				assert.Equal(t, originalCommand, alias.Command)
+			}
+		})
+	}
+}

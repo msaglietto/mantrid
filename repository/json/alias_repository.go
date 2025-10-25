@@ -105,3 +105,65 @@ func (r *aliasRepository) List(ctx context.Context) ([]*domain.Alias, error) {
 
 	return aliases, nil
 }
+
+func (r *aliasRepository) Update(ctx context.Context, alias *domain.Alias) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	aliases, err := r.readAliases()
+	if err != nil {
+		return fmt.Errorf("failed to read aliases: %w", err)
+	}
+
+	// Find and update the alias
+	found := false
+	for i, a := range aliases {
+		if a.Name == alias.Name {
+			aliases[i] = alias
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return domain.ErrAliasNotFound
+	}
+
+	if err := r.writeAliases(aliases); err != nil {
+		return fmt.Errorf("failed to write aliases: %w", err)
+	}
+
+	return nil
+}
+
+func (r *aliasRepository) Delete(ctx context.Context, name string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	aliases, err := r.readAliases()
+	if err != nil {
+		return fmt.Errorf("failed to read aliases: %w", err)
+	}
+
+	// Find and remove the alias
+	found := false
+	newAliases := make([]*domain.Alias, 0, len(aliases))
+	for _, a := range aliases {
+		if a.Name == name {
+			found = true
+			// Skip this alias (effectively removing it)
+			continue
+		}
+		newAliases = append(newAliases, a)
+	}
+
+	if !found {
+		return domain.ErrAliasNotFound
+	}
+
+	if err := r.writeAliases(newAliases); err != nil {
+		return fmt.Errorf("failed to write aliases: %w", err)
+	}
+
+	return nil
+}
