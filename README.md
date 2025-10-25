@@ -19,33 +19,104 @@ go install github.com/msaglietto/mantrid@latest
 
 ## 🏁 Quick Start
 
+### Basic Alias Management
+
 1. Add a new alias:
-   ```
-   mantrid alias add myalias "echo Hello, World!"
+   ```bash
+   mantrid alias add hello "echo Hello, World!"
    ```
 
-2. List all aliases:
+2. Execute an alias:
+   ```bash
+   mantrid do hello
    ```
+
+3. List all aliases:
+   ```bash
    mantrid alias list
    ```
 
-3. Edit an existing alias:
-   ```
-   mantrid alias edit myalias "echo Hello, Universe!"
+4. Edit an existing alias:
+   ```bash
+   mantrid alias edit hello "echo Hello, Universe!"
    ```
 
-4. Remove an alias:
+5. Remove an alias:
+   ```bash
+   mantrid alias remove hello
    ```
-   mantrid alias remove myalias
-   ```
+
+### Simple Aliases (Auto-Append)
+
+For simple command aliases without placeholders, parameters are automatically appended:
+
+```bash
+# Create simple aliases
+mantrid alias add ls "ls"
+mantrid alias add dk "docker"
+mantrid alias add k "kubectl"
+
+# Parameters are automatically appended
+mantrid do ls -- -la /tmp           # Executes: ls -la /tmp
+mantrid do dk -- ps -a              # Executes: docker ps -a
+mantrid do k -- get pods            # Executes: kubectl get pods
+```
+
+### Aliases with Parameter Substitution
+
+For advanced control, use placeholders:
+
+- **Positional parameters**: `$1`, `$2`, `$3`, etc.
+- **All parameters**: `$@` or `$*`
+
+**Examples:**
+
+```bash
+# Create alias with placeholders
+mantrid alias add greet "echo Hello, $1!"
+mantrid alias add deploy "kubectl apply -f $1 -n $2"
+
+# Parameters are substituted
+mantrid do greet World              # Executes: echo Hello, World!
+mantrid do deploy app.yaml prod     # Executes: kubectl apply -f app.yaml -n prod
+
+# Use all parameters with $@
+mantrid alias add search "grep -r $@ ."
+mantrid do search "TODO"            # Executes: grep -r TODO .
+```
+
+### Passing Flags to Aliases
+
+When you need to pass flags (arguments starting with `-` or `--`) to your aliases, use the `--` separator to prevent Cobra from interpreting them as flags to the `do` command itself:
+
+```bash
+# Simple execution
+mantrid do hello
+
+# With parameters
+mantrid do greet Alice
+
+# Using -- separator (useful for flags)
+mantrid do ls -- -la /tmp
+mantrid do docker -- run --rm -it ubuntu bash
+mantrid do grep -- -r "pattern" .
+
+# The -- tells Mantrid to pass everything after it as parameters
+```
+
+The `--` separator is especially useful when your alias needs to receive flags that would otherwise conflict with Mantrid's own command-line parsing.
+
+**Security Note:** Aliases execute commands directly in your system shell. Only create aliases for commands you trust. Parameter substitution does not perform shell escaping - use with caution.
+
+### Cloud Synchronization
 
 5. Set up cloud synchronization:
-   ```
+   ```bash
    mantrid cloud setup
    ```
 
 6. Sync your data to the cloud:
-   ```
+   ```bash
    mantrid cloud sync
    ```
 
