@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"context"
+	stdjson "encoding/json"
 	"fmt"
 	"os"
 	"text/tabwriter"
@@ -48,7 +49,25 @@ var listAliasCmd = &cobra.Command{
 		}
 
 		if len(aliases) == 0 {
-			fmt.Println("No aliases found")
+			// Check if JSON output is requested
+			jsonOutput, _ := cmd.Flags().GetBool("json")
+			if jsonOutput {
+				fmt.Println("[]")
+			} else {
+				fmt.Println("No aliases found")
+			}
+			return nil
+		}
+
+		// Check if JSON output is requested
+		jsonOutput, _ := cmd.Flags().GetBool("json")
+		if jsonOutput {
+			output, err := stdjson.MarshalIndent(aliases, "", "  ")
+			if err != nil {
+				logger.Error("failed to marshal aliases to JSON", "error", err)
+				return fmt.Errorf("failed to marshal aliases to JSON: %w", err)
+			}
+			fmt.Println(string(output))
 			return nil
 		}
 
@@ -75,4 +94,5 @@ func formatTime(t time.Time) string {
 
 func init() {
 	aliasCmd.AddCommand(listAliasCmd)
+	listAliasCmd.Flags().Bool("json", false, "Output aliases in JSON format")
 }
