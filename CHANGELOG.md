@@ -15,6 +15,14 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - *(config)* Use viper's env handling for config file path
+- Remove unused ctx reassignment in app.New()
+- Add fsync before rename in atomic file write
+- Address code review blockers and warnings
+
+### 🚜 Refactor
+
+- Architecture improvements across all layers
+- Use cmd.OutOrStdout() for command output, simplify test helper
 
 ### ⚙️ Miscellaneous Tasks
 
