@@ -103,6 +103,13 @@ func (r *aliasRepository) writeAliases(aliases []*domain.Alias) error {
 		return fmt.Errorf("failed to write temp file: %w", err)
 	}
 
+	// Sync to ensure data is flushed to storage before rename
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		os.Remove(tmpName)
+		return fmt.Errorf("failed to sync temp file: %w", err)
+	}
+
 	if err := tmp.Close(); err != nil {
 		os.Remove(tmpName)
 		return fmt.Errorf("failed to close temp file: %w", err)
