@@ -33,7 +33,6 @@ func New(ctx context.Context, configFilePath ...string) (*App, error) {
 
 	// Initialize logger from config
 	logger := logging.InitLogger(cfg)
-	ctx = logging.WithLogger(ctx, logger)
 
 	// Initialize file manager
 	fm := paths.NewFileManager(cfg)
