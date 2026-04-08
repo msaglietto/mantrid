@@ -54,7 +54,9 @@ func (r *aliasRepository) FindByName(ctx context.Context, name string) (*domain.
 
 	for _, alias := range aliases {
 		if alias.Name == name {
-			return alias, nil
+			// Return a defensive copy to prevent mutation of internal state
+			cp := *alias
+			return &cp, nil
 		}
 	}
 

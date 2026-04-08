@@ -120,6 +120,15 @@ func validateConfig(cfg *Config) error {
 		return fmt.Errorf("invalid storage type: %s", cfg.StorageType)
 	}
 
+	// Validate log format
+	validLogFormats := map[string]bool{
+		"json": true,
+		"text": true,
+	}
+	if !validLogFormats[cfg.LogFormat] {
+		return fmt.Errorf("invalid log format: %s", cfg.LogFormat)
+	}
+
 	return nil
 }
 

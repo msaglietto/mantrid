@@ -40,7 +40,9 @@ func (r *aliasRepository) FindByName(ctx context.Context, name string) (*domain.
 	if !ok {
 		return nil, domain.ErrAliasNotFound
 	}
-	return alias, nil
+	// Return a defensive copy to prevent mutation of internal state
+	cp := *alias
+	return &cp, nil
 }
 
 func (r *aliasRepository) List(ctx context.Context) ([]*domain.Alias, error) {

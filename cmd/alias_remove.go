@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -41,7 +42,7 @@ var removeAliasCmd = &cobra.Command{
 			fmt.Fprintf(cmd.OutOrStdout(), "Command: %s\n", alias.Command)
 			fmt.Fprintf(cmd.OutOrStdout(), "\n")
 
-			if !confirmDelete(name) {
+			if !confirmDelete(cmd, os.Stdin, name) {
 				application.Logger.Info("alias removal cancelled by user", "name", name)
 				fmt.Fprintln(cmd.OutOrStdout(), "Removal cancelled")
 				return nil
@@ -60,9 +61,9 @@ var removeAliasCmd = &cobra.Command{
 	},
 }
 
-func confirmDelete(aliasName string) bool {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("Are you sure you want to remove alias '%s'? (y/N): ", aliasName)
+func confirmDelete(cmd *cobra.Command, in io.Reader, aliasName string) bool {
+	reader := bufio.NewReader(in)
+	fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to remove alias '%s'? (y/N): ", aliasName)
 
 	response, err := reader.ReadString('\n')
 	if err != nil {

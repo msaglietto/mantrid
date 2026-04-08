@@ -137,6 +137,16 @@ func TestUpdateCommand(t *testing.T) {
 			newCommand:  "",
 			expectedErr: domain.ErrEmptyAliasCommand,
 		},
+		{
+			name:        "command too long",
+			newCommand:  strings.Repeat("a", 4097),
+			expectedErr: domain.ErrCommandTooLong,
+		},
+		{
+			name:        "command at max length",
+			newCommand:  strings.Repeat("a", 4096),
+			expectedErr: nil,
+		},
 	}
 
 	for _, tt := range tests {

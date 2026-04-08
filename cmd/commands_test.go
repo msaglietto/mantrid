@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"strings"
 	"testing"
@@ -21,7 +22,7 @@ import (
 func setupTestApp(t *testing.T) *app.App {
 	t.Helper()
 
-	logger := slog.New(slog.NewTextHandler(ioDiscard{}, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	logger := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	cfg := &config.Config{
 		StorageType: "memory",
@@ -50,13 +51,17 @@ func setupTestApp(t *testing.T) *app.App {
 	return application
 }
 
-type ioDiscard struct{}
-
-func (ioDiscard) Write(p []byte) (int, error) { return len(p), nil }
-
 // runCommand executes a cobra command with the given arguments and returns
 // the combined output and error.
-func runCommand(args ...string) (string, error) {
+// It resets global flag state before each invocation to prevent test interference.
+func runCommand(t *testing.T, args ...string) (string, error) {
+	t.Helper()
+
+	// Reset global flag state to prevent interference between tests
+	cfgFile = ""
+	forceRemove = false
+	removeAliasCmd.Flags().Set("force", "false")
+
 	buf := new(bytes.Buffer)
 	rootCmd.SetOut(buf)
 	rootCmd.SetErr(buf)
@@ -71,7 +76,7 @@ func TestAddAliasCommand(t *testing.T) {
 	t.Run("add alias successfully", func(t *testing.T) {
 		setupTestApp(t)
 
-		output, err := runCommand("alias", "add", "test", "echo hello")
+		output, err := runCommand(t, "alias", "add", "test", "echo hello")
 		assert.NoError(t, err)
 		assert.Contains(t, output, "Alias 'test' created successfully")
 	})
@@ -79,14 +84,14 @@ func TestAddAliasCommand(t *testing.T) {
 	t.Run("add alias missing command", func(t *testing.T) {
 		setupTestApp(t)
 
-		_, err := runCommand("alias", "add", "test")
+		_, err := runCommand(t, "alias", "add", "test")
 		assert.Error(t, err)
 	})
 
 	t.Run("add alias missing name and command", func(t *testing.T) {
 		setupTestApp(t)
 
-		_, err := runCommand("alias", "add")
+		_, err := runCommand(t, "alias", "add")
 		assert.Error(t, err)
 	})
 }
@@ -94,10 +99,10 @@ func TestAddAliasCommand(t *testing.T) {
 func TestAddAliasDuplicate(t *testing.T) {
 	setupTestApp(t)
 
-	_, err := runCommand("alias", "add", "test", "echo hello")
+	_, err := runCommand(t, "alias", "add", "test", "echo hello")
 	require.NoError(t, err)
 
-	output, err := runCommand("alias", "add", "test", "echo world")
+	output, err := runCommand(t, "alias", "add", "test", "echo world")
 	assert.Error(t, err)
 	assert.Contains(t, output, "failed to create alias")
 }
@@ -106,7 +111,7 @@ func TestListAliasesCommand(t *testing.T) {
 	t.Run("list empty", func(t *testing.T) {
 		setupTestApp(t)
 
-		output, err := runCommand("alias", "list")
+		output, err := runCommand(t, "alias", "list")
 		assert.NoError(t, err)
 		assert.Contains(t, output, "No aliases found")
 	})
@@ -118,7 +123,7 @@ func TestListAliasesCommand(t *testing.T) {
 		application.AliasService.CreateAlias(ctx, "build", "go build")
 		application.AliasService.CreateAlias(ctx, "test", "go test ./...")
 
-		output, err := runCommand("alias", "list")
+		output, err := runCommand(t, "alias", "list")
 		assert.NoError(t, err)
 		assert.Contains(t, output, "NAME")
 		assert.Contains(t, output, "build")
@@ -130,7 +135,7 @@ func TestListAliasesCommand(t *testing.T) {
 	t.Run("list empty with json flag", func(t *testing.T) {
 		setupTestApp(t)
 
-		output, err := runCommand("alias", "list", "--json")
+		output, err := runCommand(t, "alias", "list", "--json")
 		assert.NoError(t, err)
 		assert.Contains(t, output, "[]")
 	})
@@ -141,7 +146,7 @@ func TestListAliasesCommand(t *testing.T) {
 
 		application.AliasService.CreateAlias(ctx, "build", "go build")
 
-		output, err := runCommand("alias", "list", "--json")
+		output, err := runCommand(t, "alias", "list", "--json")
 		assert.NoError(t, err)
 		assert.Contains(t, output, "build")
 		assert.Contains(t, output, "go build")
@@ -154,7 +159,7 @@ func TestEditAliasCommand(t *testing.T) {
 		ctx := context.Background()
 		application.AliasService.CreateAlias(ctx, "test", "echo original")
 
-		output, err := runCommand("alias", "edit", "test", "echo updated")
+		output, err := runCommand(t, "alias", "edit", "test", "echo updated")
 		assert.NoError(t, err)
 		assert.Contains(t, output, "Alias 'test' updated successfully")
 	})
@@ -162,7 +167,7 @@ func TestEditAliasCommand(t *testing.T) {
 	t.Run("edit non-existent alias", func(t *testing.T) {
 		setupTestApp(t)
 
-		output, err := runCommand("alias", "edit", "nonexistent", "echo test")
+		output, err := runCommand(t, "alias", "edit", "nonexistent", "echo test")
 		assert.Error(t, err)
 		assert.Contains(t, output, "failed to update alias")
 	})
@@ -170,7 +175,7 @@ func TestEditAliasCommand(t *testing.T) {
 	t.Run("edit missing args", func(t *testing.T) {
 		setupTestApp(t)
 
-		_, err := runCommand("alias", "edit", "test")
+		_, err := runCommand(t, "alias", "edit", "test")
 		assert.Error(t, err)
 	})
 }
@@ -181,7 +186,7 @@ func TestRemoveAliasCommand(t *testing.T) {
 		ctx := context.Background()
 		application.AliasService.CreateAlias(ctx, "test", "echo test")
 
-		output, err := runCommand("alias", "remove", "test", "--force")
+		output, err := runCommand(t, "alias", "remove", "test", "--force")
 		assert.NoError(t, err)
 		assert.Contains(t, output, "Alias 'test' removed successfully")
 	})
@@ -189,14 +194,14 @@ func TestRemoveAliasCommand(t *testing.T) {
 	t.Run("remove non-existent alias with force", func(t *testing.T) {
 		setupTestApp(t)
 
-		_, err := runCommand("alias", "remove", "nonexistent", "--force")
+		_, err := runCommand(t, "alias", "remove", "nonexistent", "--force")
 		assert.Error(t, err)
 	})
 
 	t.Run("remove missing args", func(t *testing.T) {
 		setupTestApp(t)
 
-		_, err := runCommand("alias", "remove")
+		_, err := runCommand(t, "alias", "remove")
 		assert.Error(t, err)
 	})
 }
@@ -205,7 +210,7 @@ func TestDoCommand(t *testing.T) {
 	t.Run("alias not found", func(t *testing.T) {
 		setupTestApp(t)
 
-		output, err := runCommand("do", "nonexistent")
+		output, err := runCommand(t, "do", "nonexistent")
 		assert.Error(t, err)
 		assert.Contains(t, output, "not found")
 	})
@@ -213,7 +218,7 @@ func TestDoCommand(t *testing.T) {
 	t.Run("do missing args", func(t *testing.T) {
 		setupTestApp(t)
 
-		_, err := runCommand("do")
+		_, err := runCommand(t, "do")
 		assert.Error(t, err)
 	})
 }
@@ -228,7 +233,7 @@ func TestAppFactoryError(t *testing.T) {
 		return nil, fmt.Errorf("config error")
 	}
 
-	_, err := runCommand("alias", "add", "test", "echo test")
+	_, err := runCommand(t, "alias", "add", "test", "echo test")
 	assert.Error(t, err)
 }
 

@@ -75,4 +75,13 @@ log_format: "text"
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid log level")
 	})
+
+	t.Run("invalid log format", func(t *testing.T) {
+		os.Setenv("MANTRID_LOG_FORMAT", "xml")
+		defer os.Unsetenv("MANTRID_LOG_FORMAT")
+
+		_, err := config.Load()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid log format")
+	})
 }

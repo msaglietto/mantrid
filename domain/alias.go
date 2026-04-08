@@ -69,6 +69,9 @@ func (a *Alias) UpdateCommand(newCommand string) error {
 	if newCommand == "" {
 		return ErrEmptyAliasCommand
 	}
+	if len(newCommand) > maxCommandLength {
+		return ErrCommandTooLong
+	}
 	a.Command = newCommand
 	a.UpdatedAt = time.Now()
 	return nil
