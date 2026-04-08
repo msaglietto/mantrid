@@ -17,13 +17,17 @@ package main
 import (
 	"context"
 	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/charmbracelet/fang"
 	"github.com/msaglietto/mantrid/cmd"
 )
 
 func main() {
-	if err := fang.Execute(context.TODO(), cmd.RootCmd); err != nil {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+
+	if err := cmd.Execute(ctx); err != nil {
 		os.Exit(1)
 	}
 }

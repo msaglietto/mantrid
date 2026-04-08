@@ -18,11 +18,11 @@ func TestAliasRepositoryIntegration(t *testing.T) {
 	repo := json.NewAliasRepository(filePath)
 	ctx := context.Background()
 
-	t.Run("save and retrieve alias", func(t *testing.T) {
+	t.Run("create and retrieve alias", func(t *testing.T) {
 		alias, err := domain.NewAlias("test", "echo test")
 		require.NoError(t, err)
 
-		err = repo.Save(ctx, alias)
+		err = repo.Create(ctx, alias)
 		require.NoError(t, err)
 
 		retrieved, err := repo.FindByName(ctx, "test")

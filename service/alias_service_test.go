@@ -23,7 +23,7 @@ func cleanupMock(t *testing.T, m *MockAliasRepository) {
 	})
 }
 
-func (m *MockAliasRepository) Save(ctx context.Context, alias *domain.Alias) error {
+func (m *MockAliasRepository) Create(ctx context.Context, alias *domain.Alias) error {
 	args := m.Called(ctx, alias)
 	return args.Error(0)
 }
@@ -62,8 +62,7 @@ func TestCreateAlias(t *testing.T) {
 	t.Run("create new alias", func(t *testing.T) {
 		cleanupMock(t, mockRepo)
 
-		mockRepo.On("FindByName", ctx, "test").Return(nil, domain.ErrAliasNotFound)
-		mockRepo.On("Save", ctx, mock.AnythingOfType("*domain.Alias")).Return(nil)
+		mockRepo.On("Create", ctx, mock.AnythingOfType("*domain.Alias")).Return(nil)
 
 		err := service.CreateAlias(ctx, "test", "echo test")
 		assert.NoError(t, err)
@@ -77,8 +76,7 @@ func TestCreateAlias(t *testing.T) {
 	t.Run("alias already exists", func(t *testing.T) {
 		cleanupMock(t, mockRepo)
 
-		existingAlias, _ := domain.NewAlias("test", "echo test")
-		mockRepo.On("FindByName", ctx, "test").Return(existingAlias, nil)
+		mockRepo.On("Create", ctx, mock.AnythingOfType("*domain.Alias")).Return(domain.ErrAliasExists)
 
 		err := service.CreateAlias(ctx, "test", "echo test")
 		assert.Equal(t, domain.ErrAliasExists, err)

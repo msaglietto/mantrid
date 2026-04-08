@@ -2,16 +2,11 @@ package cmd
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/msaglietto/mantrid/internal/config"
 	"github.com/msaglietto/mantrid/internal/logging"
-	"github.com/msaglietto/mantrid/internal/paths"
-	"github.com/msaglietto/mantrid/repository/json"
-	"github.com/msaglietto/mantrid/service"
 	"github.com/spf13/cobra"
 )
 
@@ -23,36 +18,21 @@ var removeAliasCmd = &cobra.Command{
 	Long:  `Remove an existing alias by name. Prompts for confirmation unless --force flag is used.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Get logger
-		logger := logging.GetLogger()
-		ctx := logging.WithLogger(context.Background(), logger)
-
-		// Load configuration
-		cfg, err := config.Load()
+		application, err := appFactory(cmd.Context(), GetConfigFile())
 		if err != nil {
-			logger.Error("failed to load config", "error", err)
-			return fmt.Errorf("failed to load config: %w", err)
+			return err
 		}
 
-		// Initialize file manager
-		fm := paths.NewFileManager(cfg)
-		if err := fm.EnsureDirectories(); err != nil {
-			logger.Error("failed to create directories", "error", err)
-			return fmt.Errorf("failed to create directories: %w", err)
-		}
-
+		ctx := logging.WithLogger(cmd.Context(), application.Logger)
 		name := args[0]
-		logger.Info("removing alias", "name", name)
 
-		// Initialize repository with proper file path
-		repo := json.NewAliasRepository(fm.GetAliasFilePath())
-		svc := service.NewAliasService(repo)
+		application.Logger.Info("removing alias", "name", name)
 
 		// Get alias details for confirmation prompt
 		if !forceRemove {
-			alias, err := svc.GetAlias(ctx, name)
+			alias, err := application.AliasService.GetAlias(ctx, name)
 			if err != nil {
-				logger.Error("failed to get alias", "error", err)
+				application.Logger.Error("failed to get alias", "error", err)
 				return fmt.Errorf("failed to get alias: %w", err)
 			}
 
@@ -62,19 +42,19 @@ var removeAliasCmd = &cobra.Command{
 			fmt.Printf("\n")
 
 			if !confirmDelete(name) {
-				logger.Info("alias removal cancelled by user", "name", name)
+				application.Logger.Info("alias removal cancelled by user", "name", name)
 				fmt.Println("Removal cancelled")
 				return nil
 			}
 		}
 
 		// Delete the alias
-		if err := svc.DeleteAlias(ctx, name); err != nil {
-			logger.Error("failed to delete alias", "error", err)
+		if err := application.AliasService.DeleteAlias(ctx, name); err != nil {
+			application.Logger.Error("failed to delete alias", "error", err)
 			return fmt.Errorf("failed to delete alias: %w", err)
 		}
 
-		logger.Info("alias removed successfully", "name", name)
+		application.Logger.Info("alias removed successfully", "name", name)
 		fmt.Printf("Alias '%s' removed successfully\n", name)
 		return nil
 	},

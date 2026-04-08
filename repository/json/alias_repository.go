@@ -23,7 +23,7 @@ func NewAliasRepository(filePath string) repository.AliasRepository {
 	}
 }
 
-func (r *aliasRepository) Save(ctx context.Context, alias *domain.Alias) error {
+func (r *aliasRepository) Create(ctx context.Context, alias *domain.Alias) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -33,10 +33,9 @@ func (r *aliasRepository) Save(ctx context.Context, alias *domain.Alias) error {
 	}
 
 	// Check for existing alias
-	for i, a := range aliases {
+	for _, a := range aliases {
 		if a.Name == alias.Name {
-			aliases[i] = alias
-			return r.writeAliases(aliases)
+			return domain.ErrAliasExists
 		}
 	}
 
@@ -91,7 +90,30 @@ func (r *aliasRepository) writeAliases(aliases []*domain.Alias) error {
 		return err
 	}
 
-	return os.WriteFile(r.filePath, data, 0644)
+	// Write to a temporary file in the same directory to ensure atomic rename
+	tmp, err := os.CreateTemp(dir, ".mantrid-aliases-*.tmp")
+	if err != nil {
+		return fmt.Errorf("failed to create temp file: %w", err)
+	}
+	tmpName := tmp.Name()
+
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		os.Remove(tmpName)
+		return fmt.Errorf("failed to write temp file: %w", err)
+	}
+
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpName)
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	if err := os.Rename(tmpName, r.filePath); err != nil {
+		os.Remove(tmpName)
+		return fmt.Errorf("failed to rename temp file: %w", err)
+	}
+
+	return nil
 }
 
 func (r *aliasRepository) List(ctx context.Context) ([]*domain.Alias, error) {

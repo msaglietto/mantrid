@@ -20,7 +20,6 @@ func TestConfig(t *testing.T) {
 		assert.Equal(t, "json", cfg.StorageType)
 		assert.Equal(t, "info", cfg.LogLevel)
 		assert.Equal(t, "json", cfg.LogFormat)
-		assert.False(t, cfg.CloudEnabled)
 	})
 
 	t.Run("configuration from file", func(t *testing.T) {
@@ -29,12 +28,9 @@ func TestConfig(t *testing.T) {
 		configPath := filepath.Join(tmpDir, "config.yaml")
 
 		// Create a test configuration file
-		configContent := []byte(`
-storage_type: "memory"
+		configContent := []byte(`storage_type: "memory"
 log_level: "debug"
 log_format: "text"
-cloud_enabled: true
-cloud_url: "https://example.com"
 `)
 		err := os.WriteFile(configPath, configContent, 0644)
 		require.NoError(t, err)
@@ -51,8 +47,6 @@ cloud_url: "https://example.com"
 		assert.Equal(t, "memory", cfg.StorageType)
 		assert.Equal(t, "debug", cfg.LogLevel)
 		assert.Equal(t, "text", cfg.LogFormat)
-		assert.True(t, cfg.CloudEnabled)
-		assert.Equal(t, "https://example.com", cfg.CloudURL)
 	})
 
 	t.Run("configuration from environment variables", func(t *testing.T) {

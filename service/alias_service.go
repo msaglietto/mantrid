@@ -31,11 +31,7 @@ func (s *aliasService) CreateAlias(ctx context.Context, name, command string) er
 		return err
 	}
 
-	if _, err := s.repo.FindByName(ctx, name); err == nil {
-		return domain.ErrAliasExists
-	}
-
-	return s.repo.Save(ctx, alias)
+	return s.repo.Create(ctx, alias)
 }
 
 func (s *aliasService) GetAlias(ctx context.Context, name string) (*domain.Alias, error) {

@@ -2,18 +2,13 @@
 package cmd
 
 import (
-	"context"
 	stdjson "encoding/json"
 	"fmt"
 	"os"
 	"text/tabwriter"
 	"time"
 
-	"github.com/msaglietto/mantrid/internal/config"
 	"github.com/msaglietto/mantrid/internal/logging"
-	"github.com/msaglietto/mantrid/internal/paths"
-	"github.com/msaglietto/mantrid/repository/json"
-	"github.com/msaglietto/mantrid/service"
 	"github.com/spf13/cobra"
 )
 
@@ -22,29 +17,18 @@ var listAliasCmd = &cobra.Command{
 	Short: "List all aliases",
 	Long:  `Display a list of all configured aliases with their commands and creation dates.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		logger := logging.GetLogger()
-		ctx := logging.WithLogger(context.Background(), logger)
-
-		logger.Info("listing aliases")
-
-		// Load configuration
-		cfg, err := config.Load()
+		application, err := appFactory(cmd.Context(), GetConfigFile())
 		if err != nil {
-			logger.Error("failed to load config", "error", err)
-			return fmt.Errorf("failed to load config: %w", err)
+			return err
 		}
 
-		// Initialize file manager
-		fm := paths.NewFileManager(cfg)
-
-		// Initialize repository and service
-		repo := json.NewAliasRepository(fm.GetAliasFilePath())
-		svc := service.NewAliasService(repo)
+		ctx := logging.WithLogger(cmd.Context(), application.Logger)
+		application.Logger.Info("listing aliases")
 
 		// Get all aliases
-		aliases, err := svc.ListAliases(ctx)
+		aliases, err := application.AliasService.ListAliases(ctx)
 		if err != nil {
-			logger.Error("failed to list aliases", "error", err)
+			application.Logger.Error("failed to list aliases", "error", err)
 			return fmt.Errorf("failed to list aliases: %w", err)
 		}
 
@@ -64,7 +48,7 @@ var listAliasCmd = &cobra.Command{
 		if jsonOutput {
 			output, err := stdjson.MarshalIndent(aliases, "", "  ")
 			if err != nil {
-				logger.Error("failed to marshal aliases to JSON", "error", err)
+				application.Logger.Error("failed to marshal aliases to JSON", "error", err)
 				return fmt.Errorf("failed to marshal aliases to JSON: %w", err)
 			}
 			fmt.Println(string(output))

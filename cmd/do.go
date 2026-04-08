@@ -10,11 +10,7 @@ import (
 	"strings"
 
 	"github.com/msaglietto/mantrid/domain"
-	"github.com/msaglietto/mantrid/internal/config"
 	"github.com/msaglietto/mantrid/internal/logging"
-	"github.com/msaglietto/mantrid/internal/paths"
-	"github.com/msaglietto/mantrid/repository/json"
-	"github.com/msaglietto/mantrid/service"
 	"github.com/spf13/cobra"
 )
 
@@ -64,43 +60,31 @@ does not perform shell escaping - use with caution.`,
 		// Extract alias name and parameters
 		aliasName, params := parseDoArgs(args)
 
-		// Bootstrap: logger, config, file manager, service
-		logger := logging.GetLogger()
-		ctx := logging.WithLogger(context.Background(), logger)
-
-		cfg, err := config.Load()
+		application, err := appFactory(cmd.Context(), GetConfigFile())
 		if err != nil {
-			logger.Error("failed to load config", "error", err)
-			return fmt.Errorf("failed to load config: %w", err)
+			return err
 		}
 
-		fm := paths.NewFileManager(cfg)
-		if err := fm.EnsureDirectories(); err != nil {
-			logger.Error("failed to create directories", "error", err)
-			return fmt.Errorf("failed to create directories: %w", err)
-		}
-
-		repo := json.NewAliasRepository(fm.GetAliasFilePath())
-		svc := service.NewAliasService(repo)
+		ctx := logging.WithLogger(cmd.Context(), application.Logger)
 
 		// Get the alias
-		alias, err := svc.GetAlias(ctx, aliasName)
+		alias, err := application.AliasService.GetAlias(ctx, aliasName)
 		if err != nil {
 			if errors.Is(err, domain.ErrAliasNotFound) {
-				logger.Error("alias not found", "name", aliasName)
+				application.Logger.Error("alias not found", "name", aliasName)
 				return fmt.Errorf("alias '%s' not found. Use 'mantrid alias list' to see available aliases", aliasName)
 			}
-			logger.Error("failed to get alias", "error", err)
+			application.Logger.Error("failed to get alias", "error", err)
 			return fmt.Errorf("failed to get alias: %w", err)
 		}
 
-		logger.Info("found alias", "name", aliasName, "command", alias.Command)
+		application.Logger.Info("found alias", "name", aliasName, "command", alias.Command)
 
 		// Substitute parameters
 		command := substituteParams(alias.Command, params)
 
 		if len(params) > 0 {
-			logger.Info("substituted parameters", "original", alias.Command, "final", command)
+			application.Logger.Info("substituted parameters", "original", alias.Command, "final", command)
 		}
 
 		// Execute the command

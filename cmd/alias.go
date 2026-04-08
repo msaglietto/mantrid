@@ -1,14 +1,9 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/msaglietto/mantrid/internal/config"
 	"github.com/msaglietto/mantrid/internal/logging"
-	"github.com/msaglietto/mantrid/internal/paths"
-	"github.com/msaglietto/mantrid/repository/json"
-	"github.com/msaglietto/mantrid/service"
 	"github.com/spf13/cobra"
 )
 
@@ -22,37 +17,22 @@ var addAliasCmd = &cobra.Command{
 	Short: "Add a new alias",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Get logger
-		logger := logging.GetLogger()
-		ctx := logging.WithLogger(context.Background(), logger)
-
-		// Load configuration
-		cfg, err := config.Load()
+		application, err := appFactory(cmd.Context(), GetConfigFile())
 		if err != nil {
-			logger.Error("failed to load config", "error", err)
-			return fmt.Errorf("failed to load config: %w", err)
+			return err
 		}
 
-		// Initialize file manager
-		fm := paths.NewFileManager(cfg)
-		if err := fm.EnsureDirectories(); err != nil {
-			logger.Error("failed to create directories", "error", err)
-			return fmt.Errorf("failed to create directories: %w", err)
-		}
-
+		ctx := logging.WithLogger(cmd.Context(), application.Logger)
 		name, command := args[0], args[1]
-		logger.Info("adding new alias", "name", name)
 
-		// Initialize repository with proper file path
-		repo := json.NewAliasRepository(fm.GetAliasFilePath())
-		svc := service.NewAliasService(repo)
+		application.Logger.Info("adding new alias", "name", name)
 
-		if err := svc.CreateAlias(ctx, name, command); err != nil {
-			logger.Error("failed to create alias", "error", err)
+		if err := application.AliasService.CreateAlias(ctx, name, command); err != nil {
+			application.Logger.Error("failed to create alias", "error", err)
 			return fmt.Errorf("failed to create alias: %w", err)
 		}
 
-		logger.Info("alias created successfully", "name", name)
+		application.Logger.Info("alias created successfully", "name", name)
 		fmt.Printf("Alias '%s' created successfully\n", name)
 		return nil
 	},
