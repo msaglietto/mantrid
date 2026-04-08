@@ -37,13 +37,13 @@ var removeAliasCmd = &cobra.Command{
 			}
 
 			// Show alias details and prompt for confirmation
-			fmt.Printf("Alias: %s\n", alias.Name)
-			fmt.Printf("Command: %s\n", alias.Command)
-			fmt.Printf("\n")
+			fmt.Fprintf(cmd.OutOrStdout(), "Alias: %s\n", alias.Name)
+			fmt.Fprintf(cmd.OutOrStdout(), "Command: %s\n", alias.Command)
+			fmt.Fprintf(cmd.OutOrStdout(), "\n")
 
 			if !confirmDelete(name) {
 				application.Logger.Info("alias removal cancelled by user", "name", name)
-				fmt.Println("Removal cancelled")
+				fmt.Fprintln(cmd.OutOrStdout(), "Removal cancelled")
 				return nil
 			}
 		}
@@ -55,7 +55,7 @@ var removeAliasCmd = &cobra.Command{
 		}
 
 		application.Logger.Info("alias removed successfully", "name", name)
-		fmt.Printf("Alias '%s' removed successfully\n", name)
+		fmt.Fprintf(cmd.OutOrStdout(), "Alias '%s' removed successfully\n", name)
 		return nil
 	},
 }

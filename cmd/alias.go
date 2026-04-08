@@ -33,7 +33,7 @@ var addAliasCmd = &cobra.Command{
 		}
 
 		application.Logger.Info("alias created successfully", "name", name)
-		fmt.Printf("Alias '%s' created successfully\n", name)
+		fmt.Fprintf(cmd.OutOrStdout(), "Alias '%s' created successfully\n", name)
 		return nil
 	},
 }

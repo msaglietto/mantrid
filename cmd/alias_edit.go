@@ -29,7 +29,7 @@ var editAliasCmd = &cobra.Command{
 		}
 
 		application.Logger.Info("alias updated successfully", "name", name)
-		fmt.Printf("Alias '%s' updated successfully\n", name)
+		fmt.Fprintf(cmd.OutOrStdout(), "Alias '%s' updated successfully\n", name)
 		return nil
 	},
 }

@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 	"strings"
 	"testing"
 
@@ -63,20 +62,9 @@ func runCommand(args ...string) (string, error) {
 	rootCmd.SetErr(buf)
 	rootCmd.SetArgs(args)
 
-	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
 	err := rootCmd.ExecuteContext(context.Background())
 
-	w.Close()
-	os.Stdout = oldStdout
-
-	var cmdOutput bytes.Buffer
-	cmdOutput.ReadFrom(r)
-	r.Close()
-
-	return strings.TrimSpace(cmdOutput.String() + buf.String()), err
+	return strings.TrimSpace(buf.String()), err
 }
 
 func TestAddAliasCommand(t *testing.T) {

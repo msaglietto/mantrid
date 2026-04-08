@@ -4,7 +4,6 @@ package cmd
 import (
 	stdjson "encoding/json"
 	"fmt"
-	"os"
 	"text/tabwriter"
 	"time"
 
@@ -36,9 +35,9 @@ var listAliasCmd = &cobra.Command{
 			// Check if JSON output is requested
 			jsonOutput, _ := cmd.Flags().GetBool("json")
 			if jsonOutput {
-				fmt.Println("[]")
+				fmt.Fprintln(cmd.OutOrStdout(), "[]")
 			} else {
-				fmt.Println("No aliases found")
+				fmt.Fprintln(cmd.OutOrStdout(), "No aliases found")
 			}
 			return nil
 		}
@@ -51,12 +50,12 @@ var listAliasCmd = &cobra.Command{
 				application.Logger.Error("failed to marshal aliases to JSON", "error", err)
 				return fmt.Errorf("failed to marshal aliases to JSON: %w", err)
 			}
-			fmt.Println(string(output))
+			fmt.Fprintln(cmd.OutOrStdout(), string(output))
 			return nil
 		}
 
 		// Initialize tabwriter for formatted output
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
 		fmt.Fprintln(w, "NAME\tCOMMAND\tCREATED\t")
 		fmt.Fprintln(w, "----\t-------\t-------\t")
 
