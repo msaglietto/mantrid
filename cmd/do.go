@@ -6,17 +6,23 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strings"
 
 	"github.com/msaglietto/mantrid/domain"
-	"github.com/msaglietto/mantrid/internal/config"
 	"github.com/msaglietto/mantrid/internal/logging"
-	"github.com/msaglietto/mantrid/internal/paths"
-	"github.com/msaglietto/mantrid/repository/json"
-	"github.com/msaglietto/mantrid/service"
 	"github.com/spf13/cobra"
 )
+
+// CommandExitError represents a command that exited with a non-zero code.
+type CommandExitError struct {
+	ExitCode int
+}
+
+func (e *CommandExitError) Error() string {
+	return fmt.Sprintf("command exited with code %d", e.ExitCode)
+}
 
 var doCmd = &cobra.Command{
 	Use:   "do [alias-name] [params...]",
@@ -64,43 +70,31 @@ does not perform shell escaping - use with caution.`,
 		// Extract alias name and parameters
 		aliasName, params := parseDoArgs(args)
 
-		// Bootstrap: logger, config, file manager, service
-		logger := logging.GetLogger()
-		ctx := logging.WithLogger(context.Background(), logger)
-
-		cfg, err := config.Load()
+		application, err := appFactory(cmd.Context(), GetConfigFile())
 		if err != nil {
-			logger.Error("failed to load config", "error", err)
-			return fmt.Errorf("failed to load config: %w", err)
+			return err
 		}
 
-		fm := paths.NewFileManager(cfg)
-		if err := fm.EnsureDirectories(); err != nil {
-			logger.Error("failed to create directories", "error", err)
-			return fmt.Errorf("failed to create directories: %w", err)
-		}
-
-		repo := json.NewAliasRepository(fm.GetAliasFilePath())
-		svc := service.NewAliasService(repo)
+		ctx := logging.WithLogger(cmd.Context(), application.Logger)
 
 		// Get the alias
-		alias, err := svc.GetAlias(ctx, aliasName)
+		alias, err := application.AliasService.GetAlias(ctx, aliasName)
 		if err != nil {
 			if errors.Is(err, domain.ErrAliasNotFound) {
-				logger.Error("alias not found", "name", aliasName)
+				application.Logger.Error("alias not found", "name", aliasName)
 				return fmt.Errorf("alias '%s' not found. Use 'mantrid alias list' to see available aliases", aliasName)
 			}
-			logger.Error("failed to get alias", "error", err)
+			application.Logger.Error("failed to get alias", "error", err)
 			return fmt.Errorf("failed to get alias: %w", err)
 		}
 
-		logger.Info("found alias", "name", aliasName, "command", alias.Command)
+		application.Logger.Info("found alias", "name", aliasName, "command", alias.Command)
 
 		// Substitute parameters
 		command := substituteParams(alias.Command, params)
 
 		if len(params) > 0 {
-			logger.Info("substituted parameters", "original", alias.Command, "final", command)
+			application.Logger.Info("substituted parameters", "original", alias.Command, "final", command)
 		}
 
 		// Execute the command
@@ -108,59 +102,44 @@ does not perform shell escaping - use with caution.`,
 	},
 }
 
+// placeholderRe matches $@, $*, or $N (positional) in a single pass.
+var placeholderRe = regexp.MustCompile(`\$([0-9]+)|\$(@)|\$(\*)`)
+
 // substituteParams replaces parameter placeholders in command with actual values
 // Supports: $1, $2, $3, ... (positional), $@ (all params), $* (all params as string)
 // If no placeholders are found and params are provided, appends params to command
 func substituteParams(command string, params []string) string {
-	result := command
-
 	// If no params provided, return command as-is
 	if len(params) == 0 {
+		return command
+	}
+
+	allParams := strings.Join(params, " ")
+	hasPlaceholders := false
+
+	result := placeholderRe.ReplaceAllStringFunc(command, func(match string) string {
+		hasPlaceholders = true
+		switch match {
+		case "$@", "$*":
+			return allParams
+		default:
+			// Positional parameter: extract the number
+			idx := 0
+			fmt.Sscanf(match[1:], "%d", &idx)
+			if idx >= 1 && idx <= len(params) {
+				return params[idx-1]
+			}
+			// Out-of-range positional: leave as-is
+			return match
+		}
+	})
+
+	if hasPlaceholders {
 		return result
 	}
 
-	// Check if command contains any parameter placeholders
-	hasPlaceholders := false
-
-	// Check for $1, $2, $3, etc.
-	for i := 1; i <= len(params); i++ {
-		if strings.Contains(result, fmt.Sprintf("$%d", i)) {
-			hasPlaceholders = true
-			break
-		}
-	}
-
-	// Check for $@ or $*
-	if strings.Contains(result, "$@") || strings.Contains(result, "$*") {
-		hasPlaceholders = true
-	}
-
-	// If command has placeholders, do substitution
-	if hasPlaceholders {
-		// Replace positional parameters ($1, $2, etc.)
-		for i, param := range params {
-			placeholder := fmt.Sprintf("$%d", i+1)
-			result = strings.ReplaceAll(result, placeholder, param)
-		}
-
-		// Replace $@ with all parameters (space-separated)
-		if strings.Contains(result, "$@") {
-			allParams := strings.Join(params, " ")
-			result = strings.ReplaceAll(result, "$@", allParams)
-		}
-
-		// Replace $* with all parameters (same as $@)
-		if strings.Contains(result, "$*") {
-			allParams := strings.Join(params, " ")
-			result = strings.ReplaceAll(result, "$*", allParams)
-		}
-	} else {
-		// No placeholders found - auto-append parameters
-		allParams := strings.Join(params, " ")
-		result = result + " " + allParams
-	}
-
-	return result
+	// No placeholders found - auto-append parameters
+	return result + " " + allParams
 }
 
 // parseDoArgs extracts alias name and parameters from command arguments
@@ -209,9 +188,10 @@ func executeCommand(ctx context.Context, command string) error {
 	// Run the command
 	if err := cmd.Run(); err != nil {
 		// Check if it's an exit error (non-zero exit code)
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
 			logger.Warn("command exited with error", "exit_code", exitErr.ExitCode())
-			os.Exit(exitErr.ExitCode())
+			return &CommandExitError{ExitCode: exitErr.ExitCode()}
 		}
 		return fmt.Errorf("failed to execute command: %w", err)
 	}

@@ -27,9 +27,9 @@ func TestAliasRepository_List(t *testing.T) {
 		alias1, _ := domain.NewAlias("test1", "echo test1")
 		alias2, _ := domain.NewAlias("test2", "echo test2")
 
-		err := repo.Save(ctx, alias1)
+		err := repo.Create(ctx, alias1)
 		assert.NoError(t, err)
-		err = repo.Save(ctx, alias2)
+		err = repo.Create(ctx, alias2)
 		assert.NoError(t, err)
 
 		// List aliases
@@ -52,7 +52,7 @@ func TestAliasRepository_Update(t *testing.T) {
 	t.Run("update existing alias", func(t *testing.T) {
 		// Create and save an alias
 		alias, _ := domain.NewAlias("test", "echo original")
-		err := repo.Save(ctx, alias)
+		err := repo.Create(ctx, alias)
 		assert.NoError(t, err)
 
 		// Update the alias
@@ -90,11 +90,11 @@ func TestAliasRepository_Update(t *testing.T) {
 		alias2, _ := domain.NewAlias("alias2", "echo two")
 		alias3, _ := domain.NewAlias("alias3", "echo three")
 
-		err := repo.Save(ctx, alias1)
+		err := repo.Create(ctx, alias1)
 		assert.NoError(t, err)
-		err = repo.Save(ctx, alias2)
+		err = repo.Create(ctx, alias2)
 		assert.NoError(t, err)
-		err = repo.Save(ctx, alias3)
+		err = repo.Create(ctx, alias3)
 		assert.NoError(t, err)
 
 		// Update only alias2
@@ -130,7 +130,7 @@ func TestAliasRepository_Delete(t *testing.T) {
 	t.Run("delete existing alias", func(t *testing.T) {
 		// Create and save an alias
 		alias, _ := domain.NewAlias("test", "echo test")
-		err := repo.Save(ctx, alias)
+		err := repo.Create(ctx, alias)
 		assert.NoError(t, err)
 
 		// Delete the alias
@@ -161,11 +161,11 @@ func TestAliasRepository_Delete(t *testing.T) {
 		alias2, _ := domain.NewAlias("alias2", "echo two")
 		alias3, _ := domain.NewAlias("alias3", "echo three")
 
-		err := repo.Save(ctx, alias1)
+		err := repo.Create(ctx, alias1)
 		assert.NoError(t, err)
-		err = repo.Save(ctx, alias2)
+		err = repo.Create(ctx, alias2)
 		assert.NoError(t, err)
-		err = repo.Save(ctx, alias3)
+		err = repo.Create(ctx, alias3)
 		assert.NoError(t, err)
 
 		// Delete only alias2

@@ -217,6 +217,36 @@ func TestSubstituteParams(t *testing.T) {
 			params:   []string{"x", "y"},
 			expected: "echo x y then x y",
 		},
+		{
+			name:     "$10+ does not corrupt from $1 substitution",
+			command:  "echo $10",
+			params:   []string{"hello"},
+			expected: "echo $10",
+		},
+		{
+			name:     "$10 with 10 params substituted correctly",
+			command:  "echo $10",
+			params:   []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j"},
+			expected: "echo j",
+		},
+		{
+			name:     "param value containing $@ is not re-expanded",
+			command:  "echo $1",
+			params:   []string{"$@"},
+			expected: "echo $@",
+		},
+		{
+			name:     "param value containing $* is not re-expanded",
+			command:  "echo $1",
+			params:   []string{"$*"},
+			expected: "echo $*",
+		},
+		{
+			name:     "param value containing $2 is not re-expanded",
+			command:  "echo $1",
+			params:   []string{"$2"},
+			expected: "echo $2",
+		},
 	}
 
 	for _, tt := range tests {
