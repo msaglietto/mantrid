@@ -13,8 +13,69 @@ Mantrid is a powerful, user-friendly command-line tool designed to streamline yo
 
 ## 🛠️ Installation
 
+### Homebrew (macOS / Linux)
+
+```bash
+brew install msaglietto/tap/mantrid
+```
+
+### Binary Download
+
+Download the latest binary for your platform from the [releases page](https://github.com/msaglietto/mantrid/releases/latest):
+
+| Platform | Architecture | File |
+|----------|-------------|------|
+| macOS | Apple Silicon (aarch64) | `mantrid_X.Y.Z_darwin_aarch64.tar.gz` |
+| macOS | Intel (x86_64) | `mantrid_X.Y.Z_darwin_x86_64.tar.gz` |
+| Linux | x86_64 | `mantrid_X.Y.Z_linux_x86_64.tar.gz` |
+| Linux | ARM64 | `mantrid_X.Y.Z_linux_aarch64.tar.gz` |
+| Linux | ARMv6 | `mantrid_X.Y.Z_linux_armv6.tar.gz` |
+| Windows | x86_64 | `mantrid_X.Y.Z_windows_x86_64.zip` |
+| Windows | ARM64 | `mantrid_X.Y.Z_windows_aarch64.zip` |
+
+Extract the archive and move the binary to a directory in your `$PATH`.
+
+### Linux Packages
+
+**Debian / Ubuntu:**
+
+Download the `.deb` file from the [releases page](https://github.com/msaglietto/mantrid/releases/latest) and install:
+
+```bash
+sudo dpkg -i mantrid_X.Y.Z_linux_amd64.deb
+```
+
+**Fedora / RHEL:**
+
+Download the `.rpm` file from the [releases page](https://github.com/msaglietto/mantrid/releases/latest) and install:
+
+```bash
+sudo rpm -i mantrid_X.Y.Z_linux_amd64.rpm
+```
+
+### Windows
+
+**Scoop:**
+
+```powershell
+scoop bucket add msaglietto https://github.com/msaglietto/scoop-bucket
+scoop install mantrid
+```
+
+### Go Install
+
+> **Note:** Requires [Go 1.23+](https://go.dev/dl/)
+
 ```bash
 go install github.com/msaglietto/mantrid@latest
+```
+
+Make sure `$GOPATH/bin` (or `$HOME/go/bin`) is in your `$PATH`.
+
+### Verify Installation
+
+```bash
+mantrid --help
 ```
 
 ## 🏁 Quick Start
