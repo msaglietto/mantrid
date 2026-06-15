@@ -27,6 +27,15 @@ var rootCmd = &cobra.Command{
 	Long:  `A command-line application written in Go that helps you store and run aliases, and manage your dotfile configurations.`,
 }
 
+// SetVersionInfo wires build-time version metadata into the root command so
+// that `mantrid --version` reports it.
+func SetVersionInfo(version, commit, date string) {
+	rootCmd.Version = version
+	rootCmd.SetVersionTemplate(
+		"mantrid {{.Version}}\ncommit: " + commit + "\nbuilt:  " + date + "\n",
+	)
+}
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute(ctx context.Context) error {
