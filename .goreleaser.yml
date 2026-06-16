@@ -36,12 +36,12 @@ archives:
       {{- .Version }}_
       {{- .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "arm64" }}aarch64
+      {{- else if eq .Arch "arm64" }}{{ if eq .Os "linux" }}aarch64{{ else }}arm64{{ end }}
       {{- else if eq .Arch "arm" }}armv6
       {{- else }}{{ .Arch }}{{ end }}
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 
 checksum:
   name_template: "checksums.txt"
@@ -66,6 +66,9 @@ brews:
   - repository:
       owner: msaglietto
       name: homebrew-tap
+      # A PAT with `repo` scope on msaglietto/homebrew-tap. The default
+      # Actions GITHUB_TOKEN is scoped to this repo only and cannot push here.
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
     directory: Formula
     homepage: "https://github.com/msaglietto/mantrid"
     description: "CLI tool for managing aliases and dotfiles"
@@ -73,20 +76,21 @@ brews:
     install: |
       bin.install "mantrid"
     test: |
-      system "#{bin}/mantrid --help"
+      system "#{bin}/mantrid --version"
 
 scoops:
   - repository:
       owner: msaglietto
       name: scoop-bucket
+      # Same PAT as brews; required to push to the separate scoop-bucket repo.
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
     directory: bucket
     homepage: "https://github.com/msaglietto/mantrid"
     description: "CLI tool for managing aliases and dotfiles"
     license: Apache-2.0
 
 nfpms:
-  - file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    homepage: "https://github.com/msaglietto/mantrid"
+  - homepage: "https://github.com/msaglietto/mantrid"
     description: "CLI tool for managing aliases and dotfiles"
     license: "Apache-2.0"
     formats:

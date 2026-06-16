@@ -24,13 +24,13 @@ Download the latest binary for your platform from the [releases page](https://gi
 
 | Platform | Architecture | File |
 |----------|-------------|------|
-| macOS | Apple Silicon (aarch64) | `mantrid_X.Y.Z_darwin_aarch64.tar.gz` |
+| macOS | Apple Silicon (arm64) | `mantrid_X.Y.Z_darwin_arm64.tar.gz` |
 | macOS | Intel (x86_64) | `mantrid_X.Y.Z_darwin_x86_64.tar.gz` |
 | Linux | x86_64 | `mantrid_X.Y.Z_linux_x86_64.tar.gz` |
 | Linux | ARM64 | `mantrid_X.Y.Z_linux_aarch64.tar.gz` |
 | Linux | ARMv6 | `mantrid_X.Y.Z_linux_armv6.tar.gz` |
 | Windows | x86_64 | `mantrid_X.Y.Z_windows_x86_64.zip` |
-| Windows | ARM64 | `mantrid_X.Y.Z_windows_aarch64.zip` |
+| Windows | ARM64 | `mantrid_X.Y.Z_windows_arm64.zip` |
 
 Extract the archive and move the binary to a directory in your `$PATH`.
 
@@ -49,7 +49,7 @@ sudo dpkg -i mantrid_X.Y.Z_linux_amd64.deb
 Download the `.rpm` file from the [releases page](https://github.com/msaglietto/mantrid/releases/latest) and install:
 
 ```bash
-sudo rpm -i mantrid_X.Y.Z_linux_amd64.rpm
+sudo rpm -i mantrid_X.Y.Z_linux_x86_64.rpm
 ```
 
 ### Windows
