@@ -18,7 +18,7 @@ func TestConfig(t *testing.T) {
 
 		// Check default values
 		assert.Equal(t, "json", cfg.StorageType)
-		assert.Equal(t, "info", cfg.LogLevel)
+		assert.Equal(t, "warn", cfg.LogLevel)
 		assert.Equal(t, "json", cfg.LogFormat)
 	})
 

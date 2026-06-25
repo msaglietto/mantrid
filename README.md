@@ -1,20 +1,80 @@
 # Mantrid: Your Command-Line Productivity Companion
 
-Mantrid is a powerful, user-friendly command-line tool designed to streamline your workflow by managing aliases and dotfiles with ease. Built with Go, Mantrid offers a robust solution for developers, system administrators, and power users who want to optimize their command-line experience across multiple devices.
+Mantrid is a user-friendly command-line tool that streamlines your workflow by storing and running command aliases. Built with Go, it's a fast, lightweight solution for developers, system administrators, and power users who want to optimize their command-line experience.
 
 ## 🚀 Features
 
 - **Intuitive Alias Management**: Create, list, edit, and remove aliases effortlessly.
-- **Dotfile Syncing**: Keep your configuration files in sync across multiple machines.
-- **Cloud Synchronization**: Store and sync your aliases and dotfiles securely in the cloud.
-- **Cross-Platform Compatibility**: Works seamlessly on Linux, macOS, and Windows.
+- **Parameter Substitution**: Use `$1`, `$@`, and friends, or auto-append arguments.
+- **Cross-Platform Compatibility**: Works on Linux, macOS, and Windows.
 - **Lightweight and Fast**: Written in Go for optimal performance.
 - **Easy to Use**: Simple, intuitive commands for all operations.
 
 ## 🛠️ Installation
 
+### Homebrew (macOS / Linux)
+
+```bash
+brew install msaglietto/tap/mantrid
+```
+
+### Binary Download
+
+Download the latest binary for your platform from the [releases page](https://github.com/msaglietto/mantrid/releases/latest):
+
+| Platform | Architecture | File |
+|----------|-------------|------|
+| macOS | Apple Silicon (arm64) | `mantrid_X.Y.Z_darwin_arm64.tar.gz` |
+| macOS | Intel (x86_64) | `mantrid_X.Y.Z_darwin_x86_64.tar.gz` |
+| Linux | x86_64 | `mantrid_X.Y.Z_linux_x86_64.tar.gz` |
+| Linux | ARM64 | `mantrid_X.Y.Z_linux_aarch64.tar.gz` |
+| Linux | ARMv6 | `mantrid_X.Y.Z_linux_armv6.tar.gz` |
+| Windows | x86_64 | `mantrid_X.Y.Z_windows_x86_64.zip` |
+| Windows | ARM64 | `mantrid_X.Y.Z_windows_arm64.zip` |
+
+Extract the archive and move the binary to a directory in your `$PATH`.
+
+### Linux Packages
+
+**Debian / Ubuntu:**
+
+Download the `.deb` file from the [releases page](https://github.com/msaglietto/mantrid/releases/latest) and install:
+
+```bash
+sudo dpkg -i mantrid_X.Y.Z_linux_amd64.deb
+```
+
+**Fedora / RHEL:**
+
+Download the `.rpm` file from the [releases page](https://github.com/msaglietto/mantrid/releases/latest) and install:
+
+```bash
+sudo rpm -i mantrid_X.Y.Z_linux_x86_64.rpm
+```
+
+### Windows
+
+**Scoop:**
+
+```powershell
+scoop bucket add msaglietto https://github.com/msaglietto/scoop-bucket
+scoop install mantrid
+```
+
+### Go Install
+
+> **Note:** Requires [Go 1.23+](https://go.dev/dl/)
+
 ```bash
 go install github.com/msaglietto/mantrid@latest
+```
+
+Make sure `$GOPATH/bin` (or `$HOME/go/bin`) is in your `$PATH`.
+
+### Verify Installation
+
+```bash
+mantrid --version
 ```
 
 ## 🏁 Quick Start
@@ -108,46 +168,37 @@ The `--` separator is especially useful when your alias needs to receive flags t
 
 **Security Note:** Aliases execute commands directly in your system shell. Only create aliases for commands you trust. Parameter substitution does not perform shell escaping - use with caution.
 
-### Cloud Synchronization
+## ⚙️ Configuration
 
-5. Set up cloud synchronization:
-   ```bash
-   mantrid cloud setup
-   ```
+Mantrid reads an optional config file from `~/.mantrid/config.yaml`. All values
+have sensible defaults, so a config file is not required.
 
-6. Sync your data to the cloud:
-   ```bash
-   mantrid cloud sync
-   ```
+```yaml
+# Storage configuration
+alias_file: "~/.mantrid/aliases.json"
+storage_type: "json"
+
+# Logging configuration
+# Levels: debug, info, warn, error. Default is "warn" (quiet during normal use).
+log_level: "warn"
+log_format: "json"
+```
+
+Settings can also be overridden with `MANTRID_`-prefixed environment variables
+(e.g. `MANTRID_LOG_LEVEL=debug`).
 
 ## 🌟 Why Mantrid?
 
 - **Boost Productivity**: Save time by creating shortcuts for your most-used commands.
-- **Consistency Across Machines**: Sync your dotfiles and aliases across multiple computers with ease.
-- **Cloud-Powered**: Keep your configurations backed up and accessible from anywhere.
 - **Customizable**: Tailor your command-line environment to your specific needs.
-- **Version Control**: Keep track of changes to your aliases and dotfiles over time.
-- **Secure**: Your data is encrypted and securely stored in the cloud.
+- **Cross-Platform**: One tool that behaves the same on Linux, macOS, and Windows.
 
-## ☁️ Cloud Synchronization
+## 🗺️ Roadmap
 
-Mantrid offers seamless cloud synchronization to keep your aliases and dotfiles consistent across all your devices:
+Planned for future releases (not yet available):
 
-- **Automatic Backups**: Your configurations are always safe and up-to-date.
-- **Multi-Device Sync**: Access your aliases and dotfiles from any machine.
-- **Selective Sync**: Choose which items to sync and which to keep local.
-- **Conflict Resolution**: Smart handling of changes made on different devices.
-- **Provider Flexibility**: Choose your preferred cloud storage provider.
-
-To get started with cloud sync:
-
-1. Run `mantrid cloud setup` and follow the prompts to connect to your cloud account.
-2. Use `mantrid cloud sync` to synchronize your data.
-3. On a new machine, run `mantrid cloud restore` to retrieve your configurations.
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for more details.
+- **Dotfile management**: Track and sync configuration files.
+- **Cloud synchronization**: Back up and sync aliases across machines.
 
 ## 📜 License
 
@@ -155,11 +206,11 @@ Mantrid is released under the Apache 2.0 License. See the [LICENSE](LICENSE) fil
 
 ## 🙏 Acknowledgements
 
-Mantrid is built with love and the following amazing open-source projects:
+Mantrid is built with the following open-source projects:
 - [Cobra](https://github.com/spf13/cobra)
 - [Viper](https://github.com/spf13/viper)
 
 ---
 
-Mantrid: Simplify your command-line life, one alias at a time. Now with the power of the cloud! 🚀☁️✨
+Mantrid: Simplify your command-line life, one alias at a time. 🚀
 

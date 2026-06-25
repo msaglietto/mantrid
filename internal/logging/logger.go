@@ -10,16 +10,15 @@ import (
 
 type ctxKey struct{}
 
-var logger *slog.Logger
-
 func init() {
-	logger = slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		Level: slog.LevelWarn,
+	})))
 }
 
 // InitLogger creates a logger configured from the provided config.
-// It returns the configured logger and also sets it as the package-level default.
+// It returns the configured logger and also sets it as the process-wide
+// default via slog.SetDefault, which is safe for concurrent use.
 func InitLogger(cfg *config.Config) *slog.Logger {
 	var level slog.Level
 	switch cfg.LogLevel {
@@ -45,12 +44,13 @@ func InitLogger(cfg *config.Config) *slog.Logger {
 		handler = slog.NewJSONHandler(os.Stderr, opts)
 	}
 
-	logger = slog.New(handler)
+	logger := slog.New(handler)
+	slog.SetDefault(logger)
 	return logger
 }
 
 func GetLogger() *slog.Logger {
-	return logger
+	return slog.Default()
 }
 
 func WithLogger(ctx context.Context, l *slog.Logger) context.Context {
@@ -61,5 +61,5 @@ func FromContext(ctx context.Context) *slog.Logger {
 	if l, ok := ctx.Value(ctxKey{}).(*slog.Logger); ok {
 		return l
 	}
-	return logger
+	return slog.Default()
 }

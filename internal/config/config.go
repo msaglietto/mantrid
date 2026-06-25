@@ -23,7 +23,7 @@ type Config struct {
 // defaultConfig provides default values for all configuration options
 var defaultConfig = Config{
 	StorageType: "json",
-	LogLevel:    "info",
+	LogLevel:    "warn",
 	LogFormat:   "json",
 }
 
@@ -139,7 +139,8 @@ alias_file: "~/.mantrid/aliases.json"
 storage_type: "json"
 
 # Logging configuration
-log_level: "info"
+# Levels: debug, info, warn, error. Default is "warn" (quiet during normal use).
+log_level: "warn"
 log_format: "json"
 `
 }
